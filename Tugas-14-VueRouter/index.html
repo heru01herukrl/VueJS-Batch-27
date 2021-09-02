@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <div id="app">
+
+    <p v-if="users.length">
+      <b>List User :</b>
+    <ul>
+      <li v-for="user in users">{{ user.name }}<button @click="formLogin(user)">Login</button></li>
+    </ul>
+
+    <br>
+    <button v-if="iouser != ''" @click="formllogout">Logout</button>
+    <br>
+    <!-- Pengganti tag <a href=""></a>  -->
+    <router-link to="/halaman1">halaman1</router-link>
+    <router-link to="/halaman2"
+    :event="iouser ? 'click' : ''"
+    :disabled="iouser == ''">halaman2</router-link>
+    <router-link  to="/halaman3" 
+    :event="iorule != 'admin' ? '': 'click' "
+    :disabled="iorule != 'admin'">halaman3</router-link>
+
+
+    <!-- Untuk Menampilkan component secara dinamis , sesuai dengan route yang diakses -->
+    <router-view></router-view>
+  </div>
+
+  <script src="https://unpkg.com/vue/dist/vue.js"></script>
+  <script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+  <script type="module">
+    import { CategoriesHalaman1 } from './CategoriesHalaman1.js'
+    import { CategoriesHalaman2 } from './CategoriesHalaman2.js'
+    import { CategoriesHalaman3 } from './CategoriesHalaman3.js'
+
+    // const halaman1 = { template: '<div>Ini Halaman 1</div>' }
+    // const halaman2 = { template: '<div>Ini Halaman 2</div>' }
+    // const halaman3 = { template: '<div>Ini Halaman 3</div>' }
+
+
+    // Kemudian kita arahkan setiap route ke component yang kita inginkan
+    const routes = [
+      { path: '/', component: CategoriesHalaman1, alias: '/halaman1' },
+      { path: '/halaman2', component: CategoriesHalaman2 },
+      { path: '/halaman3', component: CategoriesHalaman3 }
+    ]
+
+    //Kemudian kita instansiasi object Vue Router dan tambahkan routes yang sudah kita buat tadi
+    const router = new VueRouter({
+      routes
+    })
+
+    //Kemudian kita tambahkan object VueRouter yang kita namakan router ke object Vue
+
+    var vm = new Vue({
+      el: '#app',
+      router,
+      data: {
+        iouser: '',
+        iorule: '',
+        users: [
+          { id: 1, name: 'supram Admin', role: 'admin' },
+          { id: 2, name: 'supram user', role: 'user' },
+        ]
+      },
+      methods: {
+        formLogin: function (iuser) {
+          // console.log(id);
+          this.iouser = iuser.name
+          this.iorule = iuser.role
+        },
+        formllogout: function () {
+          this.iouser = null
+          this.iorule = null
+        }
+      }
+    })
+  </script>
+</body>
+
+</html>
