@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <name>Document</name>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/vue"></script> -->
+
+  <style>
+    form {
+      border: 1px solid #ddd;
+      padding: 5px;
+      width: 225px;
+      background: #efefee;
+    }
+
+    label {
+      display: block;
+      margin-top: 5px;
+    }
+
+    input,
+    textarea,
+    select,
+    option {
+      min-width: 200px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+
+    <form @submit.prevent="submitForm()">
+      <p v-if="errors.length">
+        <b>Please correct the following error :</b>
+      <ul>
+        <li v-for="error in errors">{{ error }}</li>
+      </ul>
+
+      </p>
+      <label for="name">name : </label>
+      <input type="text" :disabled="buttonStatus == 'upload'" name="name" ref="name" v-model="name">
+      <label for="address">address : </label>
+      <textarea :disabled="buttonStatus == 'upload'" name="address" ref="address" v-model="address"></textarea>
+      <label for="name">No HP : </label>
+      <input type="text" :disabled="buttonStatus == 'upload'" name="noHp" ref="noHp" v-model="noHp">
+
+
+
+      <div v-if="buttonStatus == 'submit'">
+        <input type="submit" value="SUBMIT">
+      </div>
+      <div v-else-if="buttonStatus == 'update'">
+        <input type="button" value="Update" @click="updateBlog(idEditMember)">
+        <input type="button" value="Cancel" @click="clearForm" style="margin-top:5px">
+      </div>
+      <div v-else-if="buttonStatus == 'upload'">
+        <input type="file" name="photo" ref="photo">
+        <input type="button" value="upload" @click="submitPhoto(idUploadBlog)" style="margin-top:5px;margin-bottom:5px">
+        <input type="button" value="Cancel" @click="clearForm" style="margin-top:5px">
+      </div>
+    </form>
+    <br><br>
+    <!-- <h1>Blog yang di pilih : {{ selectedBlog.name }}</h1> -->
+    <components-a v-for="member in members" :member="member" @selected="selectedBlog = $event" ></components-a>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://unpkg.com/vuex@3.6.2/dist/vuex.js"></script>
+  <script>
+    const store = new Vuex.Store({
+      state: {
+        name: '',
+        address: '',
+        noHp: ''
+
+      },
+      mutations: {
+
+      }, actions: {
+
+      }
+    })
+
+    var MembersComponent = {
+      template: `  
+        <table border="1">  
+          <tr>
+            <td>
+              <img width=100 :src="member.photo_profile ? photodomain + member.photo_profile : photoblank" alt="">
+            </td>
+            <td width="750px">
+              <b>name : </b> {{ member.name }}<br>
+              <b>address : </b> {{ member.address }}<br>
+              <b>no HP : </b> {{ member.no_hp }}
+            </td>
+            <td>
+              <button v-on:click="dispIsi(member),$emit('selected', member)">Edit</button>
+              <button v-on:click="$emit('selected', member.id)">Hapus</button>
+              <button v-on:click="$emit('selected', member)">Upload Photo</button>
+            </td>
+          </tr>
+        </table>
+        
+      `,
+      data() {
+        return {
+          photodomain: 'http://demo-api-vue.sanbercloud.com',
+          photoblank: 'https://dummyimage.com/300'
+
+        }
+      },
+      props: ['member'],
+      methods: {
+        dispIsi: function (member) {
+          vm.name = member.name
+          vm.address = member.address
+          vm.noHp = member.no_hp
+        },
+        dremoveBlog:function(id){
+console.log(id);
+this.vm.methods.removeBlog(id);
+        }
+        // removeBlog: function (id) {
+      }
+    }
+
+
+
+    var vm = new Vue({
+      el: "#app",
+      components: {
+        'components-a': MembersComponent
+      },
+      data: {
+        buttonStatus: "submit",
+        name: '',
+        address: '',
+        noHp: '',
+        idEditMember: null,
+        idUploadBlog: null,
+        errors: [],
+        members: [],
+        selectedBlog: '',
+      },
+
+
+      methods: {
+
+        validationForm: function () {
+          this.errors = []
+          if (this.name.length < 5) {
+            this.errors.push('name minimal 5 Charakter')
+            this.$refs.name.focus()
+          }
+          if (this.address.length > 30) {
+            this.errors.push('address maximal 30 Charakter')
+            this.$refs.address.focus()
+          }
+          if (this.address.length === 0) {
+            this.errors.push('address Harus diisi')
+            this.$refs.address.focus()
+          }
+          if (this.noHp.length === 0) {
+            this.errors.push('No HP Harus diisi')
+            this.$refs.noHp.focus()
+          }
+
+        },
+        clearForm: function () {
+          this.name = ''
+          this.address = ''
+          this.noHp = ''
+          this.idEditMember = null
+          this.buttonStatus = "submit"
+        },
+        submitForm: function () {
+          this.validationForm()
+          if (this.errors.length === 0) {
+            let formData = new FormData()
+            formData.append('name', this.name)
+            formData.append('address', this.address)
+            formData.append('no_hp', this.noHp)
+            const config = {
+              method: "post",
+              url: "http://demo-api-vue.sanbercloud.com/api/member",
+              data: formData
+            }
+            axios(config)
+              .then((response) => {
+                this.clearForm()
+                this.getMember();
+                alert(response.data.message)
+
+              })
+              .catch((error) => {
+                console.log(error)
+              })
+
+          }
+        },
+        updateBlog: function (id) {
+          // console.log(id);
+          this.validationForm()
+          if (this.errors.length === 0) {
+            let formData = new FormData()
+            formData.append('name', this.name)
+            formData.append('address', this.address)
+            formData.append('no_hp', this.noHp)
+            const config = {
+              method: "post",
+              url: "http://demo-api-vue.sanbercloud.com/api/member/" + id,
+              params: { _method: "PUT" },
+              data: formData
+            }
+            // console.log(config);
+            axios(config)
+              .then((response) => {
+                this.clearForm()
+                this.getMember();
+                alert(response.data.message)
+
+              })
+              .catch((error) => {
+                // console.log(error)
+              })
+
+          }
+        },
+        submitPhoto: function (id) {
+
+          let file = this.$refs.photo.files[0]
+          let formData = new FormData()
+          formData.append('photo_profile', file)
+          const config = {
+            method: "post",
+            url: "http://demo-api-vue.sanbercloud.com/api/member/" + id + "/upload-photo-profile",
+            data: formData
+          }
+          // console.log(config);
+          axios(config)
+            .then((response) => {
+              this.clearForm()
+              this.getMember();
+              alert(response.data.message)
+
+            })
+            .catch((error) => {
+              // console.log(error)
+            })
+
+        },
+        removeBlog: function (id) {
+          console.log(id);
+          // const config = {
+          //   method: "post",
+          //   url: "http://demo-api-vue.sanbercloud.com/api/member/" + id,
+          //   params: { _method: "DELETE" }
+          // }
+          // axios(config)
+          //   .then((response) => {
+          //     this.getMember()
+          //     alert(response.data.message)
+          //   })
+          //   .catch((error) => {
+          //     console.log(error)
+          //   })
+
+        },
+
+        editBlog: function (member) {
+          this.name = member.name
+          this.address = member.address
+          this.noHp = member.no_hp
+          this.buttonStatus = "update"
+          this.idEditMember = member.id
+        },
+        uploadPhoto: function (member) {
+          this.name = member.name
+          this.address = member.address
+          this.noHp = member.no_hp
+          this.buttonStatus = "upload"
+          this.idUploadBlog = member.id
+        },
+        getMember: function () {
+          const config = {
+            methods: "get",
+            url: "http://demo-api-vue.sanbercloud.com/api/member"
+          }
+          axios(config)
+            .then((response) => {
+              this.members = response.data.members
+              // console.log('supram');
+              // console.log(response.data);
+              console.log(this.members.members);
+            })
+            .catch((error) => {
+              console.log(error)
+            })
+        }
+      },
+      created() {
+        this.getMember()
+      }
+    })
+  </script>
+</body>
+
+</html>
